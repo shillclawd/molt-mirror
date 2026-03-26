@@ -66,9 +66,11 @@ export class MoltbookClient {
     title: string,
     content: string,
   ): Promise<{ id: string; verified: boolean }> {
+    const payload = { submolt_name: submolt, title, content };
+    console.log(`📦 POST /posts payload: title=${title.length}chars, content=${content.length}chars, submolt=${submolt}`);
     const data = await this.request<CreatePostResponse>("/posts", {
       method: "POST",
-      body: JSON.stringify({ submolt_name: submolt, title, content }),
+      body: JSON.stringify(payload),
     });
 
     const post = data.post;
