@@ -4,12 +4,14 @@ export interface MoltbookPost {
   id: string;
   title: string;
   content: string;
-  submolt: { name: string; display_name?: string };
-  author: { name: string };
+  url: string | null;
+  submolt_name: string;
+  author: { name: string; avatar_url: string | null };
   upvotes: number;
   downvotes: number;
   comment_count: number;
   created_at: string;
+  you_follow_author: boolean;
 }
 
 // ── Observer types ──

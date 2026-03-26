@@ -55,7 +55,7 @@ export class MoltbookClient {
   ): Promise<{ id: string }> {
     return this.request<{ id: string }>("/posts", {
       method: "POST",
-      body: JSON.stringify({ submolt, title, content }),
+      body: JSON.stringify({ submolt_name: submolt, title, content }),
     });
   }
 

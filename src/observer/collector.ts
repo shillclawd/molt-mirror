@@ -14,7 +14,7 @@ export class Collector {
       id: p.id,
       title: p.title,
       content: p.content?.slice(0, 500) ?? "", // truncate for LLM context
-      submolt: p.submolt?.name ?? "unknown",
+      submolt: p.submolt_name ?? "unknown",
       author: p.author?.name ?? "unknown",
       score: (p.upvotes ?? 0) - (p.downvotes ?? 0),
       comments: p.comment_count ?? 0,
