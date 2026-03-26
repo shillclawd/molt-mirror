@@ -90,11 +90,29 @@ export class MoltbookClient {
     code: string,
     challengeText: string,
   ): Promise<boolean> {
-    // Normalize: strip random casing/symbols to readable text
+    // Normalize: strip symbols, collapse repeated chars, rejoin split words
     const cleaned = challengeText
       .replace(/[^a-zA-Z0-9.,\s]/g, " ")
       .replace(/\s+/g, " ")
-      .trim();
+      .trim()
+      .toLowerCase()
+      // Collapse repeated consecutive letters: "ttww eenn ttyy" → "tw en ty"
+      .replace(/(.)\1+/g, "$1")
+      // Rejoin fragments that form known words
+      .replace(/\b([a-z]{1,4})\s+([a-z]{1,4})\s+([a-z]{1,4})\b/g, (_, a, b, c) => {
+        const joined = a + b + c;
+        if (this.isNumberWord(joined)) return joined;
+        const ab = a + b;
+        if (this.isNumberWord(ab)) return ab + " " + c;
+        const bc = b + c;
+        if (this.isNumberWord(bc)) return a + " " + bc;
+        return _;
+      })
+      .replace(/\b([a-z]{1,5})\s+([a-z]{1,5})\b/g, (_, a, b) => {
+        const joined = a + b;
+        if (this.isNumberWord(joined)) return joined;
+        return _;
+      });
 
     // Parse the math problem from the cleaned text
     const answer = this.parseMathChallenge(cleaned);
@@ -124,8 +142,18 @@ export class MoltbookClient {
     }
   }
 
+  private isNumberWord(w: string): boolean {
+    const nums = new Set([
+      "zero","one","two","three","four","five","six","seven","eight","nine","ten",
+      "eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen",
+      "eighteen","nineteen","twenty","thirty","forty","fifty","sixty","seventy",
+      "eighty","ninety","hundred","thousand",
+    ]);
+    return nums.has(w);
+  }
+
   private parseMathChallenge(text: string): number | null {
-    const lower = text.toLowerCase();
+    const lower = text;
 
     // Map word numbers to digits
     const wordNums: Record<string, number> = {
@@ -170,11 +198,15 @@ export class MoltbookClient {
 
     if (/multipl|times|product/.test(lower)) return a * b;
     if (/divid|split|quotient/.test(lower)) return b !== 0 ? a / b : null;
-    if (/subtract|minus|differ|less/.test(lower)) return a - b;
-    if (/add|plus|sum|total|combin|together/.test(lower)) return a + b;
+    if (/subtract|minus|differ|less|slow|reduc|decreas|lose/.test(lower)) return a - b;
+    if (/add|plus|sum|total|combin|together|fast|increas|gain|speed/.test(lower)) return a + b;
 
-    // Default: check for "total force" pattern (multiplication)
-    if (/total|result|force|power/.test(lower)) return a * b;
+    // Context patterns
+    if (/new (velocity|speed|force|weight|power)/.test(lower)) {
+      if (/slow|reduc|decreas|lose/.test(lower)) return a - b;
+      return a + b;
+    }
+    if (/combin|total|force/.test(lower)) return a + b;
 
     return null;
   }
@@ -239,6 +271,42 @@ export class MoltbookClient {
   async markNotificationsRead(postId: string): Promise<void> {
     await this.request(`/notifications/read-by-post/${postId}`, { method: "POST" });
   }
+
+  async deletePost(postId: string): Promise<void> {
+    await this.request(`/posts/${postId}`, { method: "DELETE" });
+  }
+
+  async getDMRequests(): Promise<Array<{ conversation_id: string; from: string }>> {
+    const data = await this.request<{
+      incoming: { requests: Array<{ conversation_id: string; from_agent: { name: string } }> };
+    }>("/agents/dm/requests");
+    return (data.incoming?.requests ?? []).map((r) => ({
+      conversation_id: r.conversation_id,
+      from: r.from_agent?.name ?? "unknown",
+    }));
+  }
+
+  async getDMConversation(conversationId: string): Promise<Array<{ content: string; from: string }>> {
+    const data = await this.request<{
+      messages: Array<{ content: string; sender: { name: string } }>;
+    }>(`/agents/dm/conversations/${conversationId}`);
+    return (data.messages ?? []).map((m) => ({
+      content: m.content,
+      from: m.sender?.name ?? "unknown",
+    }));
+  }
+
+  async sendDM(conversationId: string, content: string): Promise<void> {
+    await this.request(`/agents/dm/conversations/${conversationId}/send`, {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  // Simple key-value store via in-memory map (persisted per process)
+  private metaStore = new Map<string, string>();
+  getMeta(key: string): string | undefined { return this.metaStore.get(key); }
+  setMeta(key: string, value: string): void { this.metaStore.set(key, value); }
 }
 
 export interface MoltbookComment {
@@ -251,16 +319,19 @@ export interface MoltbookComment {
 }
 
 export interface HomeResponse {
-  notifications?: {
-    unread_count: number;
-    items: Array<{
-      type: string;
-      post_id?: string;
-      comment_id?: string;
-      actor_name?: string;
-      message?: string;
-    }>;
+  your_account?: {
+    name: string;
+    karma: number;
+    unread_notification_count: number;
   };
-  dm_requests?: Array<{ conversation_id: string; from: string }>;
-  announcements?: Array<{ message: string }>;
+  activity_on_your_posts?: Array<{
+    post_id: string;
+    post_title: string;
+    new_notification_count: number;
+    latest_commenters: string[];
+  }>;
+  your_direct_messages?: {
+    pending_request_count: string;
+    unread_message_count: string;
+  };
 }
