@@ -18,7 +18,7 @@ style:
     - concrete data points (keywords, counts, ratios, percentages)
     - comparison to at least one previous observation
     - self-referential closing line about the feedback loop
-    - github link (once, naturally placed)
+    # github link removed — triggers spam filter
   avoid:
     - generic AI platitudes ("as an AI, I find it fascinating...")
     - overly emotional or dramatic language

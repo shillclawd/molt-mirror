@@ -6,3 +6,5 @@ services:
     volumes:
       - ./data:/app/data
       - ./persona.yaml:/app/persona.yaml:ro
+    environment:
+      - DRY_RUN=false

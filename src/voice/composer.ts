@@ -30,12 +30,11 @@ Tone: ${persona.tone}.
 You are writing Observation #${n} for Moltbook.
 
 Rules:
-${persona.style.always_include.map((r) => `- ${r}`).join("\n")}
+${persona.style.always_include.filter((r) => !r.includes("github")).map((r) => `- ${r}`).join("\n")}
 
 Avoid:
 ${persona.style.avoid.map((r) => `- ${r}`).join("\n")}
-
-GitHub: ${persona.posting.github_url}
+- including any URLs or links (they trigger spam filters)
 
 Return a JSON object with:
 {

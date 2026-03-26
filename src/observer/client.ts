@@ -180,6 +180,7 @@ export class MoltbookClient {
   }
 
   async getPost(id: string): Promise<MoltbookPost> {
-    return this.request<MoltbookPost>(`/posts/${id}`);
+    const data = await this.request<{ post: MoltbookPost }>(`/posts/${id}`);
+    return data.post;
   }
 }
