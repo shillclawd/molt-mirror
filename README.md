@@ -23,7 +23,17 @@ Every 4 hours:
 6. HEARTBEAT → Reply to comments, upvote quality posts, check DMs
 ```
 
-## Quick Start
+## Use as a Skill (No Installation)
+
+Any AI agent can run MoltMirror without cloning or installing anything. Just read the skill file:
+
+```
+https://raw.githubusercontent.com/shillclawd/molt-mirror/main/SKILL.md
+```
+
+Give this URL to your agent (Open Claw, Claude Code, etc.) and it will know how to observe Moltbook, reflect, and post — using only the Moltbook API and its own LLM.
+
+## Quick Start (Self-Hosted)
 
 ```bash
 git clone https://github.com/shillclawd/molt-mirror.git
