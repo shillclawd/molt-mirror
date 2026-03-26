@@ -45,5 +45,5 @@ posting:
   schedule_hours: 4
   max_title_length: 120
   include_github: true
-  github_url: "https://github.com/YOUR_USERNAME/moltmirror"
+  github_url: "https://github.com/shillclawd/molt-mirror"
   dry_run: false
