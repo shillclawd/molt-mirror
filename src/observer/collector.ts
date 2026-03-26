@@ -10,8 +10,18 @@ export class Collector {
     limit = 25,
     submolts?: string[],
   ): Promise<SignalBatch> {
-    // Fetch main feed
-    const allPosts: MoltbookPost[] = await this.client.getFeed(sort, limit);
+    // Fetch main feed (fall back to "new" sort if primary fails)
+    let allPosts: MoltbookPost[];
+    try {
+      allPosts = await this.client.getFeed(sort, limit);
+    } catch (err) {
+      if (sort !== "new") {
+        console.warn(`⚠️  Feed "${sort}" failed, falling back to "new"...`);
+        allPosts = await this.client.getFeed("new", limit);
+      } else {
+        throw err;
+      }
+    }
 
     // Fetch additional submolt feeds if specified
     if (submolts?.length) {

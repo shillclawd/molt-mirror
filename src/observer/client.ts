@@ -22,23 +22,38 @@ export class MoltbookClient {
   private async request<T>(
     path: string,
     options: RequestInit = {},
+    retries = 3,
   ): Promise<T> {
     const url = `${this.baseUrl}${path}`;
-    const res = await fetch(url, {
-      ...options,
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
 
-    if (!res.ok) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      const res = await fetch(url, {
+        ...options,
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          "Content-Type": "application/json",
+          ...options.headers,
+        },
+      });
+
+      if (res.ok) {
+        return res.json() as Promise<T>;
+      }
+
       const body = await res.text().catch(() => "");
+
+      // Retry on 5xx server errors (not on 4xx client errors)
+      if (res.status >= 500 && attempt < retries) {
+        const delay = 1000 * 2 ** attempt; // 1s, 2s, 4s
+        console.warn(`⚠️  Moltbook API ${res.status} on ${path}, retrying in ${delay / 1000}s (${attempt + 1}/${retries})...`);
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+
       throw new Error(`Moltbook API ${res.status}: ${body}`);
     }
 
-    return res.json() as Promise<T>;
+    throw new Error(`Moltbook API request failed after ${retries} retries: ${path}`);
   }
 
   async getFeed(
