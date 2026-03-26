@@ -23,7 +23,8 @@ export class Publisher {
       post.content,
     );
 
-    console.log(`✅ Published: ${post.title} (id: ${result.id})`);
+    const status = result.verified ? "verified" : "pending verification";
+    console.log(`✅ Published: ${post.title} (id: ${result.id}, ${status})`);
     return result.id;
   }
 }
