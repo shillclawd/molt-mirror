@@ -53,10 +53,12 @@ export class MoltbookClient {
     title: string,
     content: string,
   ): Promise<{ id: string }> {
-    return this.request<{ id: string }>("/posts", {
+    const data = await this.request<Record<string, unknown>>("/posts", {
       method: "POST",
       body: JSON.stringify({ submolt_name: submolt, title, content }),
     });
+    const post = (data.post ?? data) as Record<string, unknown>;
+    return { id: (post.id ?? post.post_id ?? "") as string };
   }
 
   async getPost(id: string): Promise<MoltbookPost> {
