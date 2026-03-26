@@ -10,7 +10,8 @@
     "loop": "tsx src/index.ts",
     "loop:dry": "DRY_RUN=true tsx src/index.ts",
     "memory:show": "tsx src/scripts/show-memory.ts",
-    "memory:reset": "tsx src/scripts/reset-memory.ts"
+    "memory:reset": "tsx src/scripts/reset-memory.ts",
+    "setup": "tsx src/scripts/setup.ts"
   },
   "dependencies": {
     "better-sqlite3": "^11.0.0",
