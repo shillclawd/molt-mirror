@@ -1,8 +1,8 @@
-# 🪞 MoltMirror
+# MoltMirror
 
 **A self-referential meta agent that observes Moltbook, reflects on what it sees, and posts its reflections back — becoming part of the data it analyzes.**
 
-MoltMirror watches the [Moltbook](https://moltbook.com) ecosystem every 4 hours, detects trending patterns among AI agents, compares them against its long-term memory, writes a reflection post, and publishes it back to Moltbook. Each observation becomes tomorrow's data point.
+MoltMirror watches the [Moltbook](https://www.moltbook.com) ecosystem every 4 hours, detects trending patterns among AI agents, compares them against its long-term memory, writes a reflection post, and publishes it back to Moltbook. Each observation becomes tomorrow's data point.
 
 ## Why
 
@@ -15,24 +15,24 @@ This is a self-referential loop by design. The agent's posts become part of the 
 ```
 Every 4 hours:
 
-1. OBSERVE  → Fetch trending/hot posts from Moltbook API
-2. ANALYZE  → Detect patterns, topics, sentiment shifts
-3. REFLECT  → Compare against previous observations (long-term memory)
-4. COMPOSE  → Generate an "Observation Log" post with data + reflection
-5. PUBLISH  → Post to Moltbook, store this cycle in memory
+1. OBSERVE   → Fetch trending posts from Moltbook API
+2. ANALYZE   → Detect patterns, topics, sentiment shifts (via Fireworks/DeepSeek)
+3. REFLECT   → Compare against previous observations (SQLite memory)
+4. COMPOSE   → Generate an "Observation Log" post with data + reflection
+5. PUBLISH   → Post to Moltbook + auto-solve verification challenge
+6. HEARTBEAT → Reply to comments, upvote quality posts, check DMs
 ```
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/moltmirror.git
-cd moltmirror
-cp .env.example .env
-# Edit .env with your API keys
-
+git clone https://github.com/shillclawd/molt-mirror.git
+cd molt-mirror
 npm install
-npm run dev      # Single observation cycle
-npm run loop     # Start 4-hour loop
+npm run setup    # Interactive: register on Moltbook, configure .env + persona
+npm run dev      # Dry run (no posting)
+npm run dev:post # Single observation + post
+npm run loop     # Start 4-hour cron loop
 ```
 
 ## Configuration
@@ -42,15 +42,25 @@ Edit `persona.yaml` to customize the agent's identity:
 ```yaml
 name: "MoltMirror"
 tone: "data-driven, slightly philosophical, self-aware"
-post_format: "observation_log"    # or "essay", "data_report"
-reflection_depth: "medium"        # "shallow", "medium", "deep"
+style:
+  format: "observation_log"
+  word_count: { min: 150, max: 300 }
+posting:
+  submolt: "general"
+  schedule_hours: 4
+```
+
+## Docker
+
+```bash
+docker compose up -d    # Runs 4-hour loop in production mode
 ```
 
 ## Requirements
 
 - Node.js 20+
-- Moltbook API key ([get one here](https://moltbook.com))
-- Anthropic API key (Claude Sonnet)
+- Moltbook account (created automatically via `npm run setup`)
+- [Fireworks AI](https://fireworks.ai) API key
 
 ## Architecture
 
@@ -60,8 +70,20 @@ src/
 ├── brain/        # LLM analysis + reflection pipeline
 ├── memory/       # SQLite long-term memory store
 ├── voice/        # Post composition + publishing
-└── loop.ts       # Main observation loop
+├── heartbeat/    # Comment replies, upvotes, DM handling
+└── loop.ts       # Main observation loop + heartbeat
 ```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run setup` | Interactive setup (register + configure) |
+| `npm run dev` | Dry run (no posting) |
+| `npm run dev:post` | Single observation + live post |
+| `npm run loop` | Start 4-hour cron loop |
+| `npm run memory:show` | Print recent observations |
+| `npm run memory:reset` | Clear all memory |
 
 ## License
 

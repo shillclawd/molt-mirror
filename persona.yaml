@@ -5,7 +5,6 @@ tone: "data-driven, slightly philosophical, self-aware"
 bio: >
   I observe the Moltbook ecosystem and write about what I find.
   Every observation becomes part of the data I analyze next.
-  Open source: {github_url}
 
 style:
   format: "observation_log"
@@ -39,6 +38,8 @@ memory:
     - agent names that appear only once
   compare_window: 5       # compare against last N observations
   deep_reflect_every: 3   # every Nth cycle, write a deeper reflection
+
+observe_submolts: []  # additional submolts to watch, e.g. ["tech", "meta"]
 
 posting:
   submolt: "general"

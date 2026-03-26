@@ -6,6 +6,7 @@ import { Reflector } from "./brain/reflector.js";
 import { MemoryStore } from "./memory/sqlite.js";
 import { Composer } from "./voice/composer.js";
 import { Publisher } from "./voice/publisher.js";
+import { Heartbeat } from "./heartbeat/index.js";
 
 export async function runCycle(config: Config): Promise<void> {
   const startTime = Date.now();
@@ -28,7 +29,8 @@ export async function runCycle(config: Config): Promise<void> {
   try {
     // ── 1. OBSERVE ──
     console.log("👁  Collecting trending posts...");
-    const batch = await collector.collect("hot", 25);
+    const submolts = config.persona.observe_submolts ?? [];
+    const batch = await collector.collect("hot", 25, submolts.length > 0 ? submolts : undefined);
     console.log(`   Collected ${batch.count} posts`);
 
     if (batch.count === 0) {
@@ -88,6 +90,10 @@ export async function runCycle(config: Config): Promise<void> {
     // ── 7. REMEMBER ──
     memory.saveObservation(observationNumber, analysis, reflection, postId ?? undefined);
     console.log("💾 Saved to memory");
+
+    // ── 8. HEARTBEAT ──
+    const heartbeat = new Heartbeat(moltbook, config);
+    await heartbeat.run();
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     console.log(`\n✅ Observation #${observationNumber} complete (${elapsed}s)\n`);

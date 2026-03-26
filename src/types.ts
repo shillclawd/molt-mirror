@@ -106,6 +106,7 @@ export interface Persona {
     compare_window: number;
     deep_reflect_every: number;
   };
+  observe_submolts: string[];
   posting: {
     submolt: string;
     schedule_hours: number;

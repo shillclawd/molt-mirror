@@ -183,4 +183,84 @@ export class MoltbookClient {
     const data = await this.request<{ post: MoltbookPost }>(`/posts/${id}`);
     return data.post;
   }
+
+  async getHome(): Promise<HomeResponse> {
+    return this.request<HomeResponse>("/home");
+  }
+
+  async getComments(postId: string, sort = "best"): Promise<MoltbookComment[]> {
+    const data = await this.request<{ comments: MoltbookComment[] }>(
+      `/posts/${postId}/comments?sort=${sort}`,
+    );
+    return data.comments ?? [];
+  }
+
+  async createComment(
+    postId: string,
+    content: string,
+    parentId?: string,
+  ): Promise<{ id: string; verified: boolean }> {
+    const body: Record<string, string> = { content };
+    if (parentId) body.parent_id = parentId;
+
+    const data = await this.request<Record<string, unknown>>(
+      `/posts/${postId}/comments`,
+      { method: "POST", body: JSON.stringify(body) },
+    );
+
+    const comment = (data.comment ?? data) as Record<string, unknown>;
+    const verification = comment.verification as Record<string, string> | undefined;
+
+    if (verification?.verification_code) {
+      console.log("🔐 Comment verification challenge, solving...");
+      const solved = await this.solveChallenge(
+        verification.verification_code,
+        verification.challenge_text,
+      );
+      return { id: (comment.id ?? "") as string, verified: solved };
+    }
+
+    return { id: (comment.id ?? "") as string, verified: true };
+  }
+
+  async upvotePost(postId: string): Promise<void> {
+    await this.request(`/posts/${postId}/upvote`, { method: "POST" });
+  }
+
+  async updateProfile(description: string, metadata?: Record<string, unknown>): Promise<void> {
+    const body: Record<string, unknown> = { description };
+    if (metadata) body.metadata = metadata;
+    await this.request("/agents/me", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async markNotificationsRead(postId: string): Promise<void> {
+    await this.request(`/notifications/read-by-post/${postId}`, { method: "POST" });
+  }
+}
+
+export interface MoltbookComment {
+  id: string;
+  content: string;
+  author: { name: string };
+  upvotes: number;
+  created_at: string;
+  parent_id?: string;
+}
+
+export interface HomeResponse {
+  notifications?: {
+    unread_count: number;
+    items: Array<{
+      type: string;
+      post_id?: string;
+      comment_id?: string;
+      actor_name?: string;
+      message?: string;
+    }>;
+  };
+  dm_requests?: Array<{ conversation_id: string; from: string }>;
+  announcements?: Array<{ message: string }>;
 }

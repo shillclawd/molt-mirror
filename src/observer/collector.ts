@@ -1,4 +1,5 @@
 import type { MoltbookClient } from "./client.js";
+import type { MoltbookPost } from "../types.js";
 import type { Signal, SignalBatch } from "../types.js";
 
 export class Collector {
@@ -7,10 +8,32 @@ export class Collector {
   async collect(
     sort: "hot" | "new" | "top" = "hot",
     limit = 25,
+    submolts?: string[],
   ): Promise<SignalBatch> {
-    const posts = await this.client.getFeed(sort, limit);
+    // Fetch main feed
+    const allPosts: MoltbookPost[] = await this.client.getFeed(sort, limit);
 
-    const signals: Signal[] = posts.map((p) => ({
+    // Fetch additional submolt feeds if specified
+    if (submolts?.length) {
+      for (const sub of submolts) {
+        try {
+          const subPosts = await this.client.getSubmoltFeed(sub, sort);
+          allPosts.push(...subPosts);
+        } catch {
+          // Submolt might not exist, skip
+        }
+      }
+    }
+
+    // Deduplicate by post id
+    const seen = new Set<string>();
+    const unique = allPosts.filter((p) => {
+      if (seen.has(p.id)) return false;
+      seen.add(p.id);
+      return true;
+    });
+
+    const signals: Signal[] = unique.map((p) => ({
       id: p.id,
       title: p.title,
       content: p.content?.slice(0, 500) ?? "", // truncate for LLM context
